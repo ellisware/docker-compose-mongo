@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    command: mongod --auth
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ADMIN_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ADMIN_PASSWORD}
+
+  mongoClientTemp:
+   image: mongo:latest
+   container_name: mongoClientTemp
+   links:
+    - mongo:mongo
+   command: sh -c "
+     sleep ${MONGO_UPTIME_WAIT} &&
+     mongo --host mongo admin --username ${MONGO_ADMIN_USER} --password ${MONGO_ADMIN_PASSWORD} --eval 'db.createUser({user:\"${MONGO_USER}\", pwd:\"${MONGO_PASSWORD}\", roles:[{role:\"readWrite\",db:\"${MONGO_DATABASE}\"}]});'"
+   depends_on:
+    - mongo
+
+volumes:
+  mongo:
